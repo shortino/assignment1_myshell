@@ -60,7 +60,7 @@ int main (int argc, char ** argv)
 		freopen(argv[1], "r", stdin);
 		prompt_print = 0;
 	}
-	
+
 	/* keep reading input until "quit" command or eof of redirected input */
 	while (!feof(stdin)) { 
 		/* get command line from input */
@@ -155,7 +155,7 @@ int main (int argc, char ** argv)
 					append_status = 0;
 					continue;
 				}
-				
+
 				/*clr command*/
 				if (!strcmp(args[0],"clr")) { // "clear" command
 					switch (pid = fork()) {
@@ -163,8 +163,8 @@ int main (int argc, char ** argv)
 							syserr("forK");
 						case 0:
 							if (execvp("clear",  args) < 0) {		//with no args
-							perror("execl");
-							exit(1);
+								perror("execl");
+								exit(1);
 							}
 						default:												// parent process dont_wait conditions
 							if (!dont_wait){
@@ -176,7 +176,7 @@ int main (int argc, char ** argv)
 					continue;
 				}
 
-				
+
 				/*echo command*/
 				if (!strcmp(args[0], "echo")) {	
 					if (write_out == 1){
@@ -227,13 +227,13 @@ int main (int argc, char ** argv)
 							//execvp("ls", args);								//old exec command
 							if (args[1]) {										//for dir command with args
 								if(execl("/bin/ls", "ls", "-al", args[1], NULL)){
-								perror("execl");								//error checks for dir command
-								exit(1);
+									perror("execl");								//error checks for dir command
+									exit(1);
 								}
 							}
 							if (execl("/bin/ls", "ls", "-al", NULL) < 0) {		//with no args
-							perror("execl");
-							exit(1);
+								perror("execl");
+								exit(1);
 							}
 							syserr("exec");										//custom error report and abort (as execvp should NOT return!)
 						default:												// parent process dont_wait conditions
@@ -268,7 +268,7 @@ int main (int argc, char ** argv)
 							printf("%s\n", *test);
 						}
 						else {
-						fprintf(ofp, "%s\n", *test);
+							fprintf(ofp, "%s\n", *test);
 						}
 						test++;
 					}
@@ -301,7 +301,7 @@ int main (int argc, char ** argv)
 				if (!strcmp(args[0],"quit")){   // "quit" command
 					break;						// break out of 'while' loop
 				}
-				
+
 				/*help command*/
 				if (!strcmp(args[0], "help")) {
 					//system("more readme");
@@ -312,8 +312,8 @@ int main (int argc, char ** argv)
 							strcpy(temp_string, home_path);
 							strcat(temp_string, "/readme");
 							if (execlp("more", "more", temp_string, NULL) < 0) {		//with no args
-							perror("execlp");
-							exit(1);
+								perror("execlp");
+								exit(1);
 							}
 						default:												// parent process dont_wait conditions
 							if (!dont_wait){
@@ -332,10 +332,22 @@ int main (int argc, char ** argv)
 					strcat(cmd, *arg++);
 					strcat(cmd, " ");
 				}
-				system(cmd);
+				switch(pid = fork()) {
+					case -1:
+						syserr("forl");
+					case 0:
+						execlp(cmd, cmd, NULL);
+						syserr("execlp");	
+						//free(cmd);
+					default:
+						if (!dont_wait){
+							waitpid(pid, &status, WUNTRACED);
+						}
+				}
+				/* set values to false */ //TODO set them all here?
 				free(cmd);
-				//while (*arg) fprintf(stdout,"%s ",*arg++);
-				//fputs ("\n", stdout);
+				dont_wait = 0;
+
 			}
 		}
 	}
