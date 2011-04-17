@@ -158,7 +158,7 @@ int main (int argc, char ** argv)
 								syserr("fork");
 							case 0:
 								set_parent();							// set_parent path
-								//printf("In child process");
+								printf("In child process");
 								freopen(inputfile, "r", stdin);			// replace stdin in read mode
 								if ( append_status){					// check output mode
 									freopen(outputfile, "a+", stdout);	// replace stdout in append mode
@@ -171,7 +171,7 @@ int main (int argc, char ** argv)
 							default:
 								if (!dont_wait){
 									waitpid(pid, &status, WUNTRACED);	// wait for this command to execute
-									//printf("\nDone outputing\n");
+									printf("\nDone outputing\n");
 								}
 						}
 					}
