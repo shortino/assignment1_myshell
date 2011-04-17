@@ -27,12 +27,17 @@ void syserr(char *msg){
 	abort();
 }
 
-/*set parent path method*/
+/*sig_process */
+void sig_process(void) {
+	printf("caught signal\n");
+}
+
+/*set parent path method in child processes*/
 void set_parent(void){
-	char temp_path[1024];
-	getcwd(temp_path, 1023);
-	strcat(temp_path, "/myshell");		// concatonate with /myshell
-	setenv("parent", home_path, 1);		// update the environment
+//	char temp_path[1024];
+//	getcwd(temp_path, 1023);
+//	strcat(temp_path, "/myshell");		// concatonate with /myshell
+	setenv("parent", getenv("shell"), 1);		// update the environment with the shell path
 }
 
 /*main method*/
@@ -71,9 +76,13 @@ int main (int argc, char ** argv)
 
 	/* keep reading input until "quit" command or eof of redirected input */
 	while (!feof(stdin)) { 
+		/* catch the signal */
+		signal(SIGINT, sig_process);
+	
 		/* get command line from input */
 		memset(buf, 0, MAX_BUFFER);				// set buffer to 0 to wipe any possible data
 		if (prompt_print) {
+			fputs (getcwd(temp_string, 1023), stdout);
 			fputs (prompt, stdout);				// write prompt
 		}
 		if (fgets(buf, MAX_BUFFER, stdin)) {	// read a line
@@ -226,6 +235,7 @@ int main (int argc, char ** argv)
 							syserr("fork"); 
 						case 0:                 // child proccess with 
 							//printf("Process ID in child after fork: %d\n", pid);
+							set_parent();
 							if (write_out == 1){
 								freopen(outputfile, "w", stdout);	//replace stdout stream			
 							}
@@ -320,6 +330,7 @@ int main (int argc, char ** argv)
 						case -1:
 							syserr("fork");
 						case 0:
+							set_parent();
 							if (write_out == 1){
 								freopen(outputfile, "w", stdout);	//replace stdout stream			
 							}
@@ -343,21 +354,13 @@ int main (int argc, char ** argv)
 				}
 
 				/* else pass command onto OS (or in this instance, print them out) */
-
-				/*char *cmd = (char *)malloc(MAX_BUFFER);
-				  arg = args;
-				  while (*arg){
-				  strcat(cmd, *arg++);
-				  strcat(cmd, " ");
-				  }*/
 				switch(pid = fork()) {
 					case -1:
 						syserr("fork");
 					case 0:
-
+						set_parent();
 						execvp(args[0] , args);
 						syserr("execvp");	
-						//free(cmd);
 					default:
 						if (!dont_wait){
 							waitpid(pid, &status, WUNTRACED);
@@ -365,7 +368,6 @@ int main (int argc, char ** argv)
 				}
 
 				/* reset all flag values to false */ 
-				//free(cmd);
 				io = 0;
 				write_out = 0;
 				append_status = 0;
