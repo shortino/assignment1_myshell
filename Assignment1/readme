@@ -1,0 +1,132 @@
+
+NAME
+	myshell - a simple shell with its own internal commands for the comp3520 assignment
+	
+SYNOPSIS
+	myshell [batch_file]
+	
+DESCRIPTION
+	myshell is a simple shell implementation with support for cd, clr, dir, environ, echo, help, pause
+	and quit commands as well as basic input and output redirection. It includes a command line for 
+	entering single commands with their appropriate arguments as well as support for a file with a list 
+	of commands (batchfile) to be called when myshell is first ran. This manual describes the implementation
+	of these commands, how they work and what they do.
+	
+COMMANDS 
+	cd <directory>: Stands for 'change directory' to the directory specified. If no directory is specified 
+					e.g. 'cd' by itself, then cd will return the current working directory path instead of
+					changing the directory. If the directory specified does not exist, an error message
+					will be presented to the user.
+					
+					NOTE: cd will change the environment paths, specifically the PWD environment variable. 
+					This is described in more detail in the ENVIRONMENT section.
+					
+		Command formats: 
+		cd : returns current working path
+		cd <directory> : changes current working directory to directory specified. Returns error
+		if directory does not exists. 
+	
+	clr : Clears the screen of all text, so that only the prompt is visible. 
+		
+		Command formats:
+		clr : clear command takes in no arguments 
+		clr & : clear command can be specified to run in the background with use of '&' at the end of command
+		
+	dir <directory> : Stands for 'directory' and lists the contents of the directory or directory specified. 
+	contents are listed with permissions and all options. The same as calling 'ls -la' command in other shells.
+	
+		Command formats examples:
+		dir : Contents of current directory are listed.
+		dir <directory> : contents of specified directory are listed.
+		dir > <outputfile> : Will output the contents of the directory into the outputfile defined. 
+		
+		NOTE: dir supports output file redirection. Explained in the CONCEPTS section. 
+	
+	environ : environ command lists all the environment strings. This includes special environment strings
+	shell and parent. More information in the ENVIRONMENT section. It takes no arguments and supports
+	output redirection.
+	
+		Command format example:
+		environ : environment string variables printed out on command prompt.
+		environ > <outputfile> : environment string variables printed out to the outputfile
+		
+		NOTE: environ supports output file redirection. Explained in the CONCEPTS section. 
+	
+	echo <comment> : echo command prints out the text inputted after the echo command, followed by a newline character. 
+	
+		Command format examples:
+		echo hi there : print out "hi there" on the command line
+		echo hi there > <outputfile> : prints "hi there" to the specified output file
+		
+		NOTE: echo supports output file redirection. Explained in the CONCEPTS section. 	
+	
+	help : displays the user manual using the 'more' filter to display contents in readable blocks.
+	
+		NOTE: help supports output file redirection. Explained in the CONCEPTS section. 
+	
+	pause : pauses the operation of myshell until 'enter' is pressed 
+	
+	quit : quit closes the shell as ctrl-c (SIGINT) kill signal is caught by myshell 
+		
+	
+	
+CONCEPTS:
+	Background execution
+	& : Use of the & symbol at the end of a command indicates for a processes to execute in the background 
+	where applicable. Unless specified with output redirection, the output of a background process will be 
+	mixed with the command line prompt once the chile process finishes executing. 
+	
+	NOTE: By default, background execution is turned off, meaning processes will wait for the child process
+	to finish executing.
+	
+	Fork and exec commands
+	fork: The fork system call creates a new process that is essentially a clone of the existing one. The 
+	child is a complete copy of the parent. For example, the child gets a copy of the parent's data space,
+	heap and stack. Note that this is a copy. The parent and child do not share these portions of memory. 
+	The child also inherits all the open file handles (and streams) of the parent with the same current 
+	file offsets. 
+	
+	exec: To actually load and execute a different process, the fork request is used first to generate the new 
+	process. The kernel system call: exec(char* programfilename) is then used to load the new program 
+	image over the forked process.
+	
+	Input and output redirection
+	myshell supports basic input and output redirection through the follow commands. Essentially, input
+	redirection refers to a program that is executed with the input redirected from a file. Output 
+	redirection refers to when a programme or command's output is redirected to be stored in a file, rather
+	than printed on the screen.
+	
+	When this involved fork and exec functions, redirection replaces the standard output and input libraries. 
+	For other commands, dir, environ, echo, and help, output redirection is supported by printing out
+	using fprintf, to the actual file specified. 
+	
+	< : Redirects input from a specified input file
+	> : Redirects output to specified output file. This is created if it does not exist and truncated 
+	if it does not exist.
+	>> : If the redirection token is >> then outputfile is created if it does not exist and appended 
+	to if it does.
+	
+	Command examples:
+	programme arg1 arg2 < inputfile > outputfile : this will call a programme with arguments 1 and
+	2, and redirect input from an inputfile and output to an outputfile. 
+	
+	
+	
+
+ENVIRONMENT: 
+
+	The environment is an array of character pointers specifying the string variables relating to the
+	current working environment of myshell. Environment variables hold information like the location 
+	of the myshell program and path of current working directory. myshell inherits all the processes 
+	from which it was invoked. However it does specify the following environment variables. 
+	
+	parent : parent path variable is the shell variable inherited by all child processes after forking. 
+	
+	shell : is the full path for the myshell executable. I.e. not a hardwired path but the one from which
+	it was executed.
+	
+	PWD : stands for present working directory, which is changed upon each successful directory change.
+
+
+	
+Manual for myshell, last updated 18th of April, 2011 by James Alexander. 
