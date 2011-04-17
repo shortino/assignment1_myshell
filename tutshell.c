@@ -27,6 +27,14 @@ void syserr(char *msg){
 	abort();
 }
 
+/*set parent path method*/
+void set_parent(void){
+	char temp_path[1024];
+	getcwd(temp_path, 1023);
+	strcat(temp_path, "/myshell");		// concatonate with /myshell
+	setenv("parent", home_path, 1);		// update the environment
+}
+
 /*main method*/
 int main (int argc, char ** argv)
 {
@@ -50,7 +58,7 @@ int main (int argc, char ** argv)
 	/* get the home dir path */
 	getcwd(home_path, 1023);
 	strcat(home_path, "/myshell");		// concatonate with /myshell
-	setenv("SHELL", home_path, 1);		// update the environment
+	setenv("shell", home_path, 1);		// update the environment
 	getcwd(home_path, 1023);			// reset home_path
 
 
@@ -109,18 +117,16 @@ int main (int argc, char ** argv)
 				j++;
 
 			}
-			/*check for pause command*/
-			if (!strcmp(args[0], "pause")) {			// "pause" command method
-				char * temp_buf;
-				temp_buf = getpass("Press Enter to continue...");
-				if (temp_buf != NULL){
-					strcpy(args[0], temp_buf);
-				}
-			}
 
 
 			/*===start command line input matching===*/
 			if (args[0]) {												// if there's anything there
+
+				/*check for pause command*/
+				if (!strcmp(args[0], "pause")) {			// "pause" command method
+					getpass("Press Enter to continue...");
+					continue;
+				}
 
 				/* check for IO command */
 				if (io == 1){
@@ -130,6 +136,7 @@ int main (int argc, char ** argv)
 							case -1:
 								syserr("fork");
 							case 0:
+								set_parent();
 								printf("In child process");
 								freopen(inputfile, "r", stdin);			//replace stdin
 								if ( append_status){				//check output mode
@@ -162,6 +169,7 @@ int main (int argc, char ** argv)
 						case -1:
 							syserr("forK");
 						case 0:
+							set_parent();
 							if (execvp("clear",  args) < 0) {		//with no args
 								perror("execl");
 								exit(1);
@@ -217,7 +225,7 @@ int main (int argc, char ** argv)
 						case -1:
 							syserr("fork"); 
 						case 0:                 // child proccess with 
-							printf("Process ID in child after fork: %d\n", pid);
+							//printf("Process ID in child after fork: %d\n", pid);
 							if (write_out == 1){
 								freopen(outputfile, "w", stdout);	//replace stdout stream			
 							}
@@ -293,6 +301,9 @@ int main (int argc, char ** argv)
 							getcwd(path, 1023);			// get the new environment
 							setenv("PWD", path, 1);		// update the environment
 						}
+						else {
+							printf("Directory is not valid\n"); // appropriate error message for non-existent directories
+						}
 					}
 					continue;
 				}
@@ -309,6 +320,12 @@ int main (int argc, char ** argv)
 						case -1:
 							syserr("fork");
 						case 0:
+							if (write_out == 1){
+								freopen(outputfile, "w", stdout);	//replace stdout stream			
+							}
+							else if (append_status == 1){
+								freopen(outputfile, "a+", stdout); 
+							}
 							strcpy(temp_string, home_path);
 							strcat(temp_string, "/readme");
 							if (execlp("more", "more", temp_string, NULL) < 0) {		//with no args
@@ -326,26 +343,33 @@ int main (int argc, char ** argv)
 				}
 
 				/* else pass command onto OS (or in this instance, print them out) */
-				char *cmd = (char *)malloc(MAX_BUFFER);
-				arg = args;
-				while (*arg){
-					strcat(cmd, *arg++);
-					strcat(cmd, " ");
-				}
+
+				/*char *cmd = (char *)malloc(MAX_BUFFER);
+				  arg = args;
+				  while (*arg){
+				  strcat(cmd, *arg++);
+				  strcat(cmd, " ");
+				  }*/
 				switch(pid = fork()) {
 					case -1:
-						syserr("forl");
+						syserr("fork");
 					case 0:
-						execlp(cmd, cmd, NULL);
-						syserr("execlp");	
+
+						execvp(args[0] , args);
+						syserr("execvp");	
 						//free(cmd);
 					default:
 						if (!dont_wait){
 							waitpid(pid, &status, WUNTRACED);
 						}
 				}
-				/* set values to false */ //TODO set them all here?
-				free(cmd);
+
+				/* reset all flag values to false */ 
+				//free(cmd);
+				io = 0;
+				write_out = 0;
+				append_status = 0;
+				print_ev = 0;
 				dont_wait = 0;
 
 			}
